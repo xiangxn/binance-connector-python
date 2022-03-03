@@ -10,7 +10,7 @@ from binance.websocket.binance_client_factory import BinanceClientFactory
 
 
 class BinanceSocketManager(threading.Thread):
-    def __init__(self, stream_url):
+    def __init__(self, stream_url, proxy=None):
         threading.Thread.__init__(self)
 
         self.factories = {}
@@ -19,6 +19,7 @@ class BinanceSocketManager(threading.Thread):
         self._conns = {}
         self._user_callback = None
         self._logger = logging.getLogger(__name__)
+        self.proxy = proxy
 
     def _start_socket(
         self, stream_name, payload, callback, is_combined=False, is_live=True
@@ -42,7 +43,10 @@ class BinanceSocketManager(threading.Thread):
 
         self._logger.info("Connection with URL: {}".format(factory_url))
 
-        factory = BinanceClientFactory(factory_url, payload=payload)
+        if self.proxy is not None:
+            factory = BinanceClientFactory(factory_url, payload=payload, proxy=self.proxy)
+        else:
+            factory = BinanceClientFactory(factory_url, payload=payload)
         factory.base_client = self
         factory.protocol = BinanceClientProtocol
         factory.setProtocolOptions(
